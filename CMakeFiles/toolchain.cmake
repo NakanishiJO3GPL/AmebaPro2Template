@@ -8,7 +8,11 @@ set(CMAKE_ASM_COMPILER_WORKS 1)
 ###****************NEW*********************#####
 set(PICOLIBC OFF)
 
-set(COMPILER_PREFIX "/Applications/ARM/bin/arm-none-eabi-" )
+if(DEFINED ENV{REALTEK_COMPILER_PREFIX})
+    set(COMPILER_PREFIX "$ENV{REALTEK_COMPILER_PREFIX}")
+else()
+    set(COMPILER_PREFIX "/Applications/ARM/bin/arm-none-eabi-")
+endif()
 set(CMAKE_C_COMPILER "${COMPILER_PREFIX}gcc" )
 set(CMAKE_CXX_COMPILER "${COMPILER_PREFIX}g++" )
 set(CMAKE_ASM_COMPILER "${COMPILER_PREFIX}gcc" )
@@ -153,7 +157,3 @@ set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
 
 
 #-DCONFIG_BUILD_ALL=1 -DROM_REGION=1
-
-
-
-
