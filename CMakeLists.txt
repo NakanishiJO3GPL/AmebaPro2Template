@@ -59,7 +59,47 @@ endif()
 set(isp_iq  drivers/firmware_isp_iq.bin)
 set(bttrace drivers/APP.trace)
 
+# Application target name (must match the name set in driver.cmake)
+if(BUILD_TZ)
+  set(app application.ns)
+else()
+  set(app application.ntz)
+endif()
+
+# =============================================================================
+# Scenario / application layer
+# =============================================================================
+# scenario.cmake appends to app_sources (MMF / NN / AINR modules) and populates
+# scn_sources (models, main.c, utils), scn_flags, scn_inc_path, scn_libs.
+#
+# Including it BEFORE add_subdirectory(drivers) is intentional:
+# CMake copies the parent scope into the child at add_subdirectory time, so
+# app_sources already contains the scenario additions when driver.cmake calls
+# add_executable().  scn_sources / scn_flags / scn_inc_path / scn_libs are
+# applied to the target afterwards via target_*() (targets are global).
+if(DEFINED SCENARIO AND SCENARIO AND NOT "${SCENARIO}" STREQUAL "standard")
+  message(STATUS "SCENARIO = ${SCENARIO}")
+  if(EXISTS ${prj_root}/scenario/${SCENARIO}/scenario.cmake)
+    message(STATUS "Building scenario: ${SCENARIO}")
+    include(${prj_root}/scenario/${SCENARIO}/scenario.cmake)
+  else()
+    message(FATAL_ERROR "SCENARIO '${SCENARIO}' not found")
+  endif()
+  if(NOT DEBUG)
+    set(SCENARIO OFF CACHE STRING INTERNAL FORCE)
+  endif()
+else()
+  message(STATUS "Building standard scenario")
+  include(${prj_root}/app/scenario.cmake)
+endif()
+
 add_subdirectory(drivers)
+
+# Attach scenario-specific content to the app target created in drivers/.
+target_sources(${app}          PRIVATE ${scn_sources})
+target_compile_definitions(${app} PRIVATE ${scn_flags})
+target_include_directories(${app} PUBLIC  ${scn_inc_path})
+target_link_libraries(${app}            ${scn_libs})
 
 # =============================================================================
 # Partition lists for ELF2BIN combine (must be a single argument, no spaces)
